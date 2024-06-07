@@ -98,11 +98,10 @@ void hline(float lineHeight)
   push();
   float lineLength = 150; 
    //hoizontale Linie
-  float y = map(lineHeight, 0, 0.72, centerY, centerY + hSpace  + 120);
+  float y = map(lineHeight, 0, 0.72, centerY, centerY + hSpace  * 5);
   stroke(0); 
   strokeWeight(4);
   line(centerX - lineLength/2, y, centerX + lineLength/2, y); 
-  
   pop();
 }
 
@@ -111,7 +110,8 @@ void vline(float linePosition)
   push();
   float lineLength = 150; 
   //vertikale Linie
-  float x = map(linePosition, 0, 2.5, centerX, centerX + vSpace + 119);
+  float x = map(linePosition, 0, 2.5, centerX, centerX + vSpace * 5);
+  println(x);
   stroke(0); 
   strokeWeight(4);
   line(x, centerY - lineLength/2, x, centerY + lineLength/2); 
@@ -157,11 +157,11 @@ void degreeCalc()
    float degree1v = tan(deltaLatP / deltaLonP);
    
    float deltaLatS = abs(coordinate(48, 42, 51.76) - coordinate(48, 44, 44.81));
-   float deltaLonS = abs(coordinate(11, 33, 20.84) - coordinate(11, 40, 30.29)) * cos(coordinate(48, 44, 44.81));
+   float deltaLonS = abs(coordinate(11, 33, 20.84) - coordinate(11, 40, 30.29)) * cos(lat);
    float degree2v = tan(deltaLatS / deltaLonS);
+   float degreeV = (degree1v - degree2v);// * RAD_TO_DEG; 
+   println("Akt. Winkelv: " + round(degreeV * 1000) / 1000.0);
    
-   float degreeV = (degree1v - degree2v) * RAD_TO_DEG; 
-  
-   println("Akt. Winkelv: " + round(degree1v * 1000) / 1000.0);
+   
    vline(degreeV);
 }
