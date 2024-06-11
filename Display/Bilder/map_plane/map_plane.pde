@@ -16,10 +16,10 @@ ArrayList<PathStruct> flightpath = new ArrayList<PathStruct>();
 
 
 class PathStruct {
-    float lat, lon;
-    PathStruct(float lat, float lon){
-      this.lat = lat;
-      this.lon = lon;
+    float lat1, lon1;
+    PathStruct(float lat1, float lon1){
+      this.lat1 = lat1;
+      this.lon1 = lon1;
     }
 }
 
@@ -29,23 +29,32 @@ void setup() {
   size(734, 733);
   imgMap = loadImage("1_1_AIP_VFR.png"); // Karte laden
   imgPlane = loadImage("Flugzeug.png"); // Flugzeugbild laden
-  try {
+  /*try {
     socket = new DatagramSocket(5000); // Erstelle einen UDP-Socket, der auf Port 5000 lauscht
   } catch (SocketException e) {
     e.printStackTrace();
-  }
+  }*/
 }
 
 void draw() {
+  push();
   image(imgMap, 0, 0);
-  receiveData();
+  //receiveData();
+  float i = 0;
+  while( i < 48 )
+  {
+    i = i + 0.1;
+    lat = coordinate(48, i, 0.1);
+  }
+  lon = coordinate(11, 40, 0.1);
   geoToPixel(lat, lon, yaw);  // Nutze die aktualisierten Koordinaten und die Rotation
   pathAdd(lat,lon);
   path();
+  pop();
 }
 
 void receiveData() {
-  byte[] buffer = new byte[1024]; // Puffer für empfangene Daten (größer, um JSON-Daten aufzunehmen)
+  /*byte[] buffer = new byte[1024]; // Puffer für empfangene Daten (größer, um JSON-Daten aufzunehmen)
   DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
   try {
     socket.receive(packet); // Empfange das UDP-Paket
@@ -61,7 +70,14 @@ void receiveData() {
     println("Received data: " + lat + ", " + lon + ", " + alt + ", " + pitch + ", " + roll + ", " + yaw);
   } catch (IOException e) {
     e.printStackTrace();
+  }*/
+  float i = 0;
+  while( i < 48 )
+  {
+    i = i + 0.1;
+    lat = coordinate(48, i, 0.1);
   }
+  lon = coordinate(11, 40, 0.1);
 }
 
 void geoToPixel(float lat, float lon, float rot) {
@@ -73,7 +89,6 @@ void geoToPixel(float lat, float lon, float rot) {
 void pathAdd(float lat, float lon)
 {
   flightpath.add(new PathStruct(lat,lon));
- 
 }
 
 void path()
@@ -84,7 +99,7 @@ void path()
   beginShape();
   for(PathStruct point : flightpath)
   {
-    vertex(point.lat, point.lon);
+    vertex(point.lat1 - 48, point.lon1);
   }
   endShape(); 
 }
