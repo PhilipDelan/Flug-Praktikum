@@ -19,6 +19,9 @@ float lonH = 0; // Länge des Flughafens
 float centerX, centerY, hSpace, vSpace;
 int numpoints;
 int R = 6371;
+float i = 40;
+float V = 0;
+float H = 0;
 
 void setup() {
   size(400,400);
@@ -38,7 +41,6 @@ void draw() {
   println(" lat: " + lat + ", lon: " + lon + ", alt: " + alt );
   println(" pitch: " + pitch + ", roll: " + roll + ", yaw: " + yaw);
   push();
-  fontBold = createFont("Arial-Bold", 17);
   commandorinstrument();
   horizontal();
   vertikal();
@@ -69,9 +71,16 @@ void receiveData() {
   */
   //lat = coordinate(48, 45, 0.1);
   //lon = coordinate(11, 39, 0.1);
-  lat = coordinate(48, 41, 0.1);
-  lon = coordinate(11, 30, 0.1);
-  alt = 300;
+  lat = coordinate(48, i, 0.1);
+  //i = i + 0.01;
+  if(i >= 47){
+    i = i + 0.01;
+  }else{;
+  i = i + 0.01;
+  }
+  delay(50);
+  lon = coordinate(11, 40, 0.1);
+  alt = 500;
   pitch = 100;
   roll = 100;
   yaw = 100;
@@ -103,15 +112,15 @@ void commandorinstrument()
     pop();
   }
   
-  if(true)
-  {
-  fill(255,0,0);
-  rect(centerX + (centerX / 2) - 46 , centerY - (centerY / 2) + 50, 50 , 20);
-  fill(0);
-  fontBold = createFont("Arial-Bold", 16);
-  textFont(fontBold);
-  text("INOP", centerX + (centerX / 2) - 40, centerY - (centerY / 2) + 66);
+  if (V < -2.5 || V > 2.5 || H < -0.72 || H > 0.72) {
+    fill(255, 0, 0);
+    rect(centerX + (centerX / 2) - 46, centerY - (centerY / 2) + 50, 50, 20);
+    fill(0);
+    PFont fontBold = createFont("Arial-Bold", 16);
+    textFont(fontBold);
+    text("INOP", centerX + (centerX / 2) - 40, centerY - (centerY / 2) + 66);
   }
+
   pop();
 }
 
@@ -182,6 +191,7 @@ void horizontal()
   degreePlane = threeDegree - degreePlane;
   println(" ------------------------------Horizontal------------------------------ ");
   println(" Gleitwinkels: " + degreePlane);
+  H = degreePlane;
   hline(max(-0.72, min(0.72, degreePlane)));
 }  
 
@@ -204,7 +214,7 @@ void vertikal() {
   float angle = calculateSignedAngle(v1, v2);
   angle = angle * RAD_TO_DEG;
   println(" Anflugwinkel " + angle);
- 
+  V = angle;
   
   vline(max(-2.5, min(2.5, angle)));
 }
