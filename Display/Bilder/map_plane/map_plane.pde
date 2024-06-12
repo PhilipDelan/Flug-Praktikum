@@ -10,25 +10,17 @@ PImage imgMap;
 PImage imgPlane;
 DatagramSocket socket;
 
-
 float lat, lon, alt, pitch, roll, yaw;
-ArrayList<PathStruct> flightpath = new ArrayList<PathStruct>();
+float i = 45;
 
-
-class PathStruct {
-    float lat1, lon1;
-    PathStruct(float lat1, float lon1){
-      this.lat1 = lat1;
-      this.lon1 = lon1;
-    }
-}
-
-
+int maxPoints = 300; // Maximale Anzahl der gespeicherten Punkte
+ArrayList<PVector> points = new ArrayList<PVector>(); // ArrayList zur Speicherung der Positionen
 
 void setup() {
   size(734, 733);
   imgMap = loadImage("1_1_AIP_VFR.png"); // Karte laden
   imgPlane = loadImage("Flugzeug.png"); // Flugzeugbild laden
+
   /*try {
     socket = new DatagramSocket(5000); // Erstelle einen UDP-Socket, der auf Port 5000 lauscht
   } catch (SocketException e) {
@@ -37,20 +29,16 @@ void setup() {
 }
 
 void draw() {
-  push();
   image(imgMap, 0, 0);
-  //receiveData();
-  float i = 0;
-  while( i < 48 )
-  {
-    i = i + 0.1;
-    lat = coordinate(48, i, 0.1);
-  }
-  lon = coordinate(11, 40, 0.1);
+  receiveData();
   geoToPixel(lat, lon, yaw);  // Nutze die aktualisierten Koordinaten und die Rotation
-  pathAdd(lat,lon);
-  path();
-  pop();
+
+  // Zeichne alle gespeicherten Punkte
+  for (PVector point : points) {
+    fill(255, 0, 0); // Rote Füllfarbe
+    stroke(255, 0, 0); // Rote Randfarbe
+    ellipse(point.x, point.y, 4, 4); // Zeichne einen Punkt an den gespeicherten Positionen
+  }
 }
 
 void receiveData() {
@@ -71,43 +59,38 @@ void receiveData() {
   } catch (IOException e) {
     e.printStackTrace();
   }*/
-  float i = 0;
-  while( i < 48 )
-  {
-    i = i + 0.1;
-    lat = coordinate(48, i, 0.1);
+  lat = coordinate(48, i, 0.1);
+  //i = i + 0.01;
+  if(i >= 47){
+    i = i + 0.01;
+  }else{;
+  i = i + 0.1;
   }
+  delay(50);
   lon = coordinate(11, 40, 0.1);
 }
 
 void geoToPixel(float lat, float lon, float rot) {
   float x = map(lon, 11.333333, 11.733333, 24, 710);
   float y = map(lat, 48.866667, 48.600000, 24, 710);
+  
+  // Füge die aktuelle Position zur ArrayList hinzu
+  points.add(0, new PVector(x + 1, y + 18));
+  
+  // Begrenze die Anzahl der gespeicherten Punkte
+  if (points.size() > maxPoints) {
+    points.remove(points.size() - 1);
+  }
+
   move(x, y, rot);
 }
 
-void pathAdd(float lat, float lon)
-{
-  flightpath.add(new PathStruct(lat,lon));
-}
-
-void path()
-{
-  stroke(255,0,0);
-  strokeWeight(5);
-  noFill();
-  beginShape();
-  for(PathStruct point : flightpath)
-  {
-    vertex(point.lat1 - 48, point.lon1);
-  }
-  endShape(); 
-}
-
 void move(float x, float y, float rot) {
+  push();
   translate(x, y);
   rotate(rot * DEG_TO_RAD);
   image(imgPlane, -imgPlane.width / 24, -imgPlane.height / 24, imgPlane.width / 12, imgPlane.height / 12);
+  pop();
 }
 
 float coordinate(float deg, float min, float sec) {
