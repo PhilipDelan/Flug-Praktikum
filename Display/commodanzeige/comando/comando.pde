@@ -25,11 +25,11 @@ float H = 0;
 
 void setup() {
   size(400,400);
-  /*try {
+  try {
     socket = new DatagramSocket(5000); // Erstelle einen UDP-Socket, der auf Port 5000 lauscht
   } catch (SocketException e) {
     e.printStackTrace();
-  }*/
+  }
 }
 
 void draw() {
@@ -48,7 +48,6 @@ void draw() {
 }
 
 void receiveData() {
-  /*
   
   byte[] buffer = new byte[1024]; // Puffer für empfangene Daten (größer, um JSON-Daten aufzunehmen)
   DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
@@ -68,22 +67,6 @@ void receiveData() {
   } catch (IOException e) {
     e.printStackTrace();
   }
-  */
-  //lat = coordinate(48, 45, 0.1);
-  //lon = coordinate(11, 39, 0.1);
-  lat = coordinate(48, i, 0.1);
-  //i = i + 0.01;
-  if(i >= 47){
-    i = i + 0.01;
-  }else{;
-  i = i + 0.01;
-  }
-  delay(50);
-  lon = coordinate(11, 40, 0.1);
-  alt = 500;
-  pitch = 100;
-  roll = 100;
-  yaw = 100;
 }
 
 
@@ -170,29 +153,28 @@ float calculateDistance(float lat1, float lon1, float lat2, float lon2) {
 
 void horizontal()
 {
-  
   println(" --------------------------------Data--------------------------------- ");
   float distThreeDegree = calculateDistance(coordinate(48, 42, 51.76), coordinate(11, 33, 20.84), coordinate(48, 44, 44.81), coordinate(11, 40, 30.29));
   float distPlane = calculateDistance(coordinate(48, 42, 51.76), coordinate(11, 33, 20.84), lat, lon);
   println(" Distance Degree: " + distThreeDegree + "    Distance Plane: " + distPlane);
   
   float heightDegree = 0.5172456; //in km
-  float heightPlane = (alt /*-367.978570*/) /1000;
+  float heightPlane = (alt -367.978570) /1000; 
   println(" Height Degree: " + heightDegree + "     Height Plane: " + heightPlane);
   
   float threeDegree = atan( heightDegree / abs(distThreeDegree));
   float degreePlane = atan(heightPlane / abs(distPlane));
   println(" Three Rad: " + degreePlane + "        Plane Rad: " + degreePlane);
   
-  threeDegree = threeDegree * RAD_TO_DEG;
-  degreePlane = degreePlane * RAD_TO_DEG;
+
   println(" Three Degree " + threeDegree + "       Plane Degree " + degreePlane);
   
-  degreePlane = threeDegree - degreePlane;
+  degreePlane = (threeDegree - degreePlane) * RAD_TO_DEG;
+  hline(max(-0.72, min(0.72, degreePlane)));
   println(" ------------------------------Horizontal------------------------------ ");
   println(" Gleitwinkels: " + degreePlane);
   H = degreePlane;
-  hline(max(-0.72, min(0.72, degreePlane)));
+  //hline(max(-0.72, min(+0.72, degreePlane)));
 }  
 
 

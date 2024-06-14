@@ -3,7 +3,7 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import processing.data.JSONObject; // Importiere die JSONObject-Klasse von Processing
+import processing.data.JSONObject; 
 import java.util.ArrayList;
 
 PImage imgMap;
@@ -13,36 +13,36 @@ DatagramSocket socket;
 float lat, lon, alt, pitch, roll, yaw;
 float i = 45;
 
-int maxPoints = 300; // Maximale Anzahl der gespeicherten Punkte
-ArrayList<PVector> points = new ArrayList<PVector>(); // ArrayList zur Speicherung der Positionen
+int maxPoints = 300; 
+ArrayList<PVector> points = new ArrayList<PVector>(); 
 
 void setup() {
   size(734, 733);
   imgMap = loadImage("1_1_AIP_VFR.png"); // Karte laden
   imgPlane = loadImage("Flugzeug.png"); // Flugzeugbild laden
 
-  /*try {
-    socket = new DatagramSocket(5000); // Erstelle einen UDP-Socket, der auf Port 5000 lauscht
+  try {
+    socket = new DatagramSocket(5000);
   } catch (SocketException e) {
     e.printStackTrace();
-  }*/
+  }
 }
 
 void draw() {
   image(imgMap, 0, 0);
   receiveData();
-  geoToPixel(lat, lon, yaw);  // Nutze die aktualisierten Koordinaten und die Rotation
+  geoToPixel(lat, lon, yaw);  
 
-  // Zeichne alle gespeicherten Punkte
+  // Punkte
   for (PVector point : points) {
-    fill(255, 0, 0); // Rote Füllfarbe
-    stroke(255, 0, 0); // Rote Randfarbe
-    ellipse(point.x, point.y, 4, 4); // Zeichne einen Punkt an den gespeicherten Positionen
+    fill(255, 0, 0); 
+    stroke(255, 0, 0); 
+    ellipse(point.x, point.y, 4, 4); 
   }
 }
 
 void receiveData() {
-  /*byte[] buffer = new byte[1024]; // Puffer für empfangene Daten (größer, um JSON-Daten aufzunehmen)
+  byte[] buffer = new byte[1024]; // Puffer für empfangene Daten (größer, um JSON-Daten aufzunehmen)
   DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
   try {
     socket.receive(packet); // Empfange das UDP-Paket
@@ -58,26 +58,26 @@ void receiveData() {
     println("Received data: " + lat + ", " + lon + ", " + alt + ", " + pitch + ", " + roll + ", " + yaw);
   } catch (IOException e) {
     e.printStackTrace();
-  }*/
+  }
+  /*
   lat = coordinate(48, i, 0.1);
   //i = i + 0.01;
   if(i >= 47){
     i = i + 0.01;
   }else{;
-  i = i + 0.1;
+    i = i + 0.01;
   }
-  delay(50);
+  //delay(300);
   lon = coordinate(11, 40, 0.1);
+  */
 }
 
 void geoToPixel(float lat, float lon, float rot) {
   float x = map(lon, 11.333333, 11.733333, 24, 710);
   float y = map(lat, 48.866667, 48.600000, 24, 710);
   
-  // Füge die aktuelle Position zur ArrayList hinzu
-  points.add(0, new PVector(x + 1, y + 18));
+  points.add(0, new PVector(x, y));
   
-  // Begrenze die Anzahl der gespeicherten Punkte
   if (points.size() > maxPoints) {
     points.remove(points.size() - 1);
   }
