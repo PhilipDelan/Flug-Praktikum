@@ -1,6 +1,6 @@
 # Flug-Praktikum
 
 ##  Nächste Aufgabe
-- GS vertauscht
+- GS vertauscht (wind kommt von unten nach oben)
 - est. time berechnen
 - est. aktulatiseren bei jedem neuen Punkt (vorarbeit)
