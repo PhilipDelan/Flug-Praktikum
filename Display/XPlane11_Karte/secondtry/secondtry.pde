@@ -83,30 +83,24 @@ class leg {
     float getdist() { return distance; }
     float getrwk() { return rwk; }
     float gettas() { return tas; }
-    
     float getbeta() {
         float beta = (windDirectionInAircraftDirection - getrwk()) * DEG_TO_RAD;
-        //println('  beta: ' + beta);
         return beta;
     }
     float getluv() {
         float luv = asin((WV * sin(getbeta()) / gettas()));
-        //println('  luv: ' + luv);
         return luv;
     }
     float getgamma() {
         float gamma = (DEG_TO_RAD * 180) - (getluv() + getbeta());
-        //println('  gamma: ' + gamma);
         return gamma;
     }
     float getGroundSpeed() {
         float GS = sqrt(sq(WV) + sq(gettas()) - 2 * WV * gettas() * cos(getgamma()));
-        println("  GS: " + GS);
         return GS;
     }
     float getEstTime() {
         float esttime = getdist() / getGroundSpeed();
-        //println('  esttime: ' + esttime);
         return esttime;
     }
    
@@ -188,7 +182,7 @@ void drawFlightInformation() {
             long currentTime = millis();
             if (currentWaypointIndex == 0) {
                 // Zeit vom Flugzeugstart bis zum ersten Wegpunkt
-                long timeTaken = (currentTime) / 1000;
+                long timeTaken = (currentTime - prevTime) / 1000;
                 actualTimes.add(timeTaken);
             } else {
                 // Zeit von einem Wegpunkt zum nächsten
@@ -209,36 +203,27 @@ void drawFlightInformation() {
 
         fill(0);
         stroke(65, 105, 225);
-        rect(1750, 40, 150, 90);  // Blau
-        
+        rect(1750, 40, 150, 120);
         fill(0);
         stroke(0);
-        rect(1750, 0, 150, 35); // flightinfo
-        rect(1750, 140, 120, 20); // est time
-        rect(1750, 170, 77, 20);  // taken time
-        
-        noFill();
-        stroke(0, 255, 127);
-        rect(1750, 132, 150, 95); // Gruens no fill
+        rect(1750, 0, 150, 35);
         strokeWeight(3);
         fill(255);
 
         text("WP" + i + " lat: " + wp.getlat() + " lon: " + wp.getlon(), 800, (i + 1) * 70);
         text("flightinformation:", 1750, 30);
-        text("  wp dist: " + (int)distanceWaypoint + " m", 1750, 60);
-        text("  tot. dist: " + tempdist + " m", 1750, 90);
-        text("  speed: " + (int)groundSpeed + " m/s", 1750, 120);
-        text("  est. time: " + (int)esttime + " s", 1750, 150);
-        text("  taken time: ", 1750, 180);
-        
+        text("wp dist: " + (int)distanceWaypoint + " m", 1750, 60);
+        text("tot. dist: " + tempdist + " m", 1750, 90);
+        text("speed: " + (int)groundSpeed + " m/s", 1750, 120);
+        text("est. time: " + (int)esttime + " s", 1750, 150);
+
         if (i < actualTimes.size()) {
-            
             long timeTaken = actualTimes.get(i);
             fill(0);
             stroke(0);
-            rect(1840, 170, 40, 20);
+            rect(1750, 170, 150, 15);
             fill(255);
-            text(timeTaken + " s", 1850, 180);
+            text("time taken: " + timeTaken + " s", 1750, 180);
         }
     }
 
@@ -273,8 +258,8 @@ void drawWaypointsAndLegs() {
 
         fill(255);
         text("dist: " + (int)(lg.getdist() + 0.5) + "m" +
-             "     rwK: " + (int)(lg.getrwk() + 0.5) + "°" +
-             "     luv: " + (lg.getluv() * RAD_TO_DEG + 0.5) + "°" +
+             "    rwK: " + (int)(lg.getrwk() + 0.5) + "°" +
+             "    luv: " + (lg.getluv() * RAD_TO_DEG + 0.5) + "°" +
              "     est. time: " + (int)(lg.getEstTime()) + "s" +
              "     tot. est. time: " + temptime + "s" +
              "     WD/WV: " + WD + "°" + "/" + WV + "m/s" +
@@ -323,7 +308,7 @@ void receiveData() {
   
     lat = coordinate(48, i, 0.1);
     i += 0.01;
-    delay(100);
+    delay(20);
     lon = coordinate(11, 40, 0.1);
 }
 
