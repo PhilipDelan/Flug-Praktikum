@@ -31,6 +31,8 @@ float lat, lon, alt, pitch, roll, yaw;
 float prevLat = 0, prevLon = 0;
 long prevTime = 0;
 float i = 40;
+float temptimer = 0; 
+long timeT = 0;
 
 int maxPoints = 300; 
 ArrayList<PVector> points = new ArrayList<PVector>(); 
@@ -232,14 +234,21 @@ void drawFlightInformation() {
         text("  taken time: ", 1750, 180);
         
         if (i < actualTimes.size()) {
-            
             long timeTaken = actualTimes.get(i);
+            timeT = timeTaken;
             fill(0);
             stroke(0);
             rect(1840, 170, 40, 20);
             fill(255);
             text(timeTaken + " s", 1850, 180);
         }
+        /*
+        if(temptimer <= getEstTime() ){ //temptimer <= timeT ||
+              temptimer = temptimer + 0.1;
+              fill(255);
+              text("timer: " + temptimer + " s", 1800, 300);
+         }
+         */
     }
 
     if (currentWaypointIndex < wpList.size()) {
@@ -267,18 +276,17 @@ void drawWaypointsAndLegs() {
     int temptime = 0;
     float dist_sum = 0.0;
     for (int j = 0; j < legList.size(); j++) {
-        leg lg = legList.get(j);
-        temptime += (int)(lg.getEstTime());
-        dist_sum += lg.getdist();
+        leg leg = legList.get(j);
+        temptime += (int)(leg.getEstTime());
+        dist_sum += leg.getdist();
 
         fill(255);
-        text("dist: " + (int)(lg.getdist() + 0.5) + "m" +
-             "     rwK: " + (int)(lg.getrwk() + 0.5) + "°" +
-             "     luv: " + (lg.getluv() * RAD_TO_DEG + 0.5) + "°" +
-             "     est. time: " + (int)(lg.getEstTime()) + "s" +
+        text("dist: " + (int)(leg.getdist() + 0.5) + "m" +
+             "     luv: " + (leg.getluv() * RAD_TO_DEG + 0.5) + "°" +
+             "     est. time: " + (int)(leg.getEstTime()) + "s" +
              "     tot. est. time: " + temptime + "s" +
              "     WD/WV: " + WD + "°" + "/" + WV + "m/s" +
-             "     time: " + (int)(lg.getdist() / lg.gettas() + 0.5) + "s" +
+             "     time: " + (int)(leg.getdist() / leg.gettas() + 0.5) + "s" +
              "     accdist: " + (int)(dist_sum + 0.5) + "m", 850, 35 + (j + 1) * 70);
     }
 }
