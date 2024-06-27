@@ -1,6 +1,8 @@
 # Flug-Praktikum
 
-##  Nächste Aufgabe
-- GS vertauscht (wind kommt von unten nach oben)
-- est. time berechnen
-- est. aktulatiseren bei jedem neuen Punkt (vorarbeit)
+##  Updates
+- WP1 wird mit dem THRESEHOLD_DISTANCE von 500m angeflogen 
+- anderen WP werden mit WP to WP distance angeflogen 
+
+
+
