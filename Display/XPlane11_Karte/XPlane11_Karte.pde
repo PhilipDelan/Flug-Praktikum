@@ -1,3 +1,5 @@
+//FINAL
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
@@ -9,8 +11,8 @@ import java.util.ArrayList;
 
 PImage img;
 PImage imgPlane;
-DatagramSocket socket;
-DatagramSocket headingSocket;
+DatagramSocket receiveSocket;
+DatagramSocket sendSocket;
 
 // Linke obere Ecke
 float map_x_lo = 27;
@@ -34,8 +36,10 @@ float lat, lon, alt, pitch, roll, yaw;
 float prevLat = 0, prevLon = 0;
 long prevTime = 0;
 float i = 40;
+float j = 35;
 float temptimer = 0; 
 long timeT = 0;
+float distWP = 0;
 
 int maxPoints = 300; 
 ArrayList<PVector> points = new ArrayList<PVector>(); 
@@ -97,34 +101,29 @@ class leg {
     float gettas() { return tas; }
     float getrwkPlane() {return rwkPlane;}
     float getbeta() {
-    float beta = (windDirectionInAircraftDirection - getrwkPlane()) * DEG_TO_RAD;
-        //println('  beta: ' + beta);
+        float beta = (windDirectionInAircraftDirection - getrwkPlane()) * DEG_TO_RAD;
         return beta;
     }
     float getluv() {
         float luv = asin((WV * sin(getbeta()) / gettas()));
-        //println('  luv: ' + luv);
         return luv;
     }
     
     float getrwskPlane() {
        rwsk = rwkPlane + getluv() * RAD_TO_DEG;
        return rwsk;
-     }
+    }
     
     float getgamma() {
         float gamma = (DEG_TO_RAD * 180) - (getluv() + getbeta());
-        //println('  gamma: ' + gamma);
         return gamma;
     }
     float getGroundSpeed() {
         float GS = sqrt(sq(WV) + sq(gettas()) - 2 * WV * gettas() * cos(getgamma()));
-        //println("  GS: " + GS);
         return GS;
     }
     float getEstTime() {
         float esttime = getdist() / getGroundSpeed();
-        //println('  esttime: ' + esttime);
         return esttime;
     }
    
@@ -172,6 +171,8 @@ class leg {
 ArrayList<waypoint> wpList = new ArrayList<waypoint>();
 ArrayList<leg> legList = new ArrayList<leg>();
 
+boolean newWaypointAdded = false;
+
 void setup() {
     size(1920,738);
     img = loadImage("Karte.jpg");
@@ -181,12 +182,12 @@ void setup() {
     prevTime = millis();
     
     try {
-      socket = new DatagramSocket(5000);
-      headingSocket = new DatagramSocket();  
+      receiveSocket = new DatagramSocket(5000);
+      sendSocket = new DatagramSocket();  
     } catch (SocketException e) {
       e.printStackTrace();
     }
-
+    
 }
 
 void draw() {
@@ -204,7 +205,6 @@ void draw() {
     //DEBUG
     debugWaypoints();
 }
-
 
 void drawPoints() {
     for (PVector point : points) {
@@ -224,113 +224,93 @@ void drawFlightInformation() {
         waypoint currentWaypoint = wpList.get(currentWaypointIndex);
         float distanceWaypoint = calculateDistance(lat, lon, currentWaypoint.getlat(), currentWaypoint.getlon());
 
-        if (distanceWaypoint < THRESHOLD_DISTANCE) {
-            long currentTime = millis();
-            if (currentWaypointIndex == 0) {
-                // Zeit vom Flugzeugstart bis zum ersten Wegpunkt
+        if (currentWaypointIndex == 0) { // Only check distance for the first waypoint
+            if (distanceWaypoint < THRESHOLD_DISTANCE) {
+                long currentTime = millis();
                 long timeTaken = (currentTime) / 1000;
                 actualTimes.add(timeTaken);
-            } else {
-                // Zeit von einem Wegpunkt zum nächsten
+                currentWaypointIndex++;
+            }
+        } else { // Use the special distance calculation for subsequent waypoints
+            if (calculateDistanceAlongAB(
+                wpList.get(currentWaypointIndex - 1).getlat(), 
+                wpList.get(currentWaypointIndex - 1).getlon(), 
+                currentWaypoint.getlat(), 
+                currentWaypoint.getlon(), 
+                lat, 
+                lon) < THRESHOLD_DISTANCE) {
+                long currentTime = millis();
                 long timeTaken = (currentTime - actualTimes.get(actualTimes.size() - 1) * 1000) / 1000;
                 actualTimes.add(timeTaken);
+                currentWaypointIndex++;
             }
-
-            currentWaypointIndex++;
         }
     }
     
     for (int i = 0; i < wpList.size(); i++) {
-    waypoint wp = wpList.get(i);
-    float distanceWaypoint = calculateDistance(lat, lon, wp.getlat(), wp.getlon());
-    float distanceWaypointAB = 0;
+        waypoint wp = wpList.get(i);
+        float distanceWaypoint = calculateDistance(lat, lon, wp.getlat(), wp.getlon());
+        float distanceWaypointAB = 0;
 
-    if (i < wpList.size() - 1) { 
-        leg leg = legList.get(i);
-        waypoint nextWp = wpList.get(i+1); // Nächster Wegpunkt
-        distanceWaypointAB = calculateDistanceAlongAB(wp.getlat(), wp.getlon(), nextWp.getlat(), nextWp.getlon(), lat, lon);
-        fill(255);
-        text("distanceWaypointAB: " + abs(distanceWaypointAB), 850, 45 + (i) * 70); // Position anpassen, damit der Text nicht überlappt
-        text("getrwkPlane: " + leg.getrwkPlane(), 1100 , 115 + (i) * 70); 
-        text("getrwskPlane: " + leg.getrwskPlane(), 1300 , 115 + (i) * 70);
+        if (i < wpList.size() - 1) { 
+            leg leg = legList.get(i);
+            waypoint nextWp = wpList.get(i+1); // Nächster Wegpunkt
+            distanceWaypointAB = calculateDistanceAlongAB(wp.getlat(), wp.getlon(), nextWp.getlat(), nextWp.getlon(), lat, lon);
+            fill(255);
+            //text("distanceWaypointAB: " + abs(distanceWaypointAB), 850, 45 + (i) * 70); // Position anpassen, damit der Text nicht überlappt
+            //text("getrwkPlane: " + leg.getrwkPlane(), 1100 , 115 + (i) * 70); 
+            //text("getrwskPlane: " + leg.getrwskPlane(), 1300 , 115 + (i) * 70);
+        }
+        tempdist += distWP;
+        float groundSpeed = calculateGroundSpeed(lat, lon, prevLat, prevLon, prevTime, millis());
+        float esttime = distWP / groundSpeed;
+
+        fill(0);
+        stroke(65, 105, 225);
+        rect(1750, 40, 150, 90);  // Blau
         
-    }
-    tempdist += distanceWaypoint;
-    float groundSpeed = calculateGroundSpeed(lat, lon, prevLat, prevLon, prevTime, millis());
-    float esttime = distanceWaypoint / groundSpeed;
-
-    fill(0);
-    stroke(65, 105, 225);
-    rect(1750, 40, 150, 90);  // Blau
-    
-    fill(0);
-    stroke(0);
-    rect(1750, 0, 150, 35); // flightinfo
-    rect(1750, 140, 150, 20); // est time
-    rect(1750, 170, 77, 20);  // taken time
-    
-    noFill();
-    stroke(0, 255, 127);
-    rect(1750, 132, 150, 95); // Gruens no fill
-    strokeWeight(3);
-    fill(255);
-
-    text("WP" + i + " lat: " + wp.getlat() + " lon: " + wp.getlon(), 800, (i + 1) * 70);
-    text("flightinformation:", 1750, 30);
-    text("  wp dist: " + (int)distanceWaypoint + " m", 1750, 60);
-    text("  tot. dist: " + tempdist + " m", 1750, 90);
-    text("  speed: " + (int)groundSpeed + " m/s", 1750, 120);
-    text("  est. time: " + (int)esttime + " s", 1750, 150);
-    text("  taken time: ", 1750, 180);
-    
-    if (i < actualTimes.size()) {
-        long timeTaken = actualTimes.get(i);
-        timeT = timeTaken;
         fill(0);
         stroke(0);
-        rect(1840, 170, 40, 20);
+        rect(1750, 0, 150, 35); // flightinfo
+        rect(1750, 140, 150, 20); // est time
+        rect(1750, 170, 77, 20);  // taken time
+        
+        noFill();
+        stroke(0, 255, 127);
+        rect(1750, 132, 150, 95); // Gruens no fill
+        strokeWeight(3);
         fill(255);
-        text(timeTaken + " s", 1850, 180);
-    }
-    /*
-    if(temptimer <= getEstTime() ){ //temptimer <= timeT ||
-          temptimer = temptimer + 0.1;
-          fill(255);
-          text("timer: " + temptimer + " s", 1800, 300);
-     }
-     */
-  }
 
-  if(currentWaypointIndex < wpList.size()) {
-      waypoint currentWaypoint = wpList.get(currentWaypointIndex);
-      fill(0);
-      stroke(0);
-      rect(800, (currentWaypointIndex + 1) * 70 - 20, 300, 25);
-      fill(255, 0, 0);
-      text("WP" + currentWaypointIndex + "   lat: " + currentWaypoint.getlat() + "   lon: " + currentWaypoint.getlon(), 800, (currentWaypointIndex + 1) * 70);
-  }
-      /*
-      for (int j = 0; j < legList.size(); j++) {
-        leg leg = legList.get(j);
+        text("WP" + i + " lat: " + wp.getlat() + " lon: " + wp.getlon(), 800, (i + 1) * 70);
+        text("flightinformation:", 1750, 30);
+        text("  wp-p dist: " + (int)distWP + " m", 1750, 60); //works
+        text("  tot. dist: " + tempdist + " m", 1750, 90); //works
+        text("  speed: " + (int)groundSpeed + " m/s", 1750, 120);
+        text("  est. time: " + (int)esttime + " s", 1750, 150);
+        
+       
+    }
+    if(currentWaypointIndex < wpList.size()) {
+        waypoint currentWaypoint = wpList.get(currentWaypointIndex);
         fill(0);
         stroke(0);
-        rect(850, 4, 50, 20);
-        fill(255);
-        text("getrwsk: " + leg.getrwsk(), 880 ,45 + (i + 1) * 70); 
-      }
-      
-      */
+        rect(800, (currentWaypointIndex + 1) * 70 - 20, 300, 25);
+        fill(255, 0, 0); // RED
+        text("WP" + currentWaypointIndex + "   lat: " + currentWaypoint.getlat() + "   lon: " + currentWaypoint.getlon(), 800, (currentWaypointIndex + 1) * 70);
+    }
 }
 
-
-
 void drawWaypointsAndLegs() {
+    // Draw crosses for waypoints, skipping the first two
     for (int i = 0; i < wpList.size(); i++) {
-        if (i == currentWaypointIndex) wpList.get(i).cross(true);
-        else wpList.get(i).cross(false);
+        if (i > 0) { // Skip drawing cross for WP0
+            if (i == currentWaypointIndex) wpList.get(i).cross(true);
+            else wpList.get(i).cross(false);
+        }
     }
   
-    for (int i = 1; i < wpList.size(); i++) {
+    // Draw lines between waypoints, starting from WP2
+    for (int i = 2; i < wpList.size(); i++) {
         line(wpList.get(i - 1).getx(), wpList.get(i - 1).gety(), wpList.get(i).getx(), wpList.get(i).gety());
     }
   
@@ -352,6 +332,7 @@ void drawWaypointsAndLegs() {
     }
 }
 
+
 void updatePreviousValues() {
     prevLat = lat;
     prevLon = lon;
@@ -360,26 +341,42 @@ void updatePreviousValues() {
 
 void mousePressed() {
     if (mouseButton == LEFT) {
-        wpList.add(new waypoint((float) mouseX, (float) mouseY));
+        waypoint newWaypoint = new waypoint((float) mouseX, (float) mouseY);
+        wpList.add(newWaypoint);
         if (wpList.size() > 1) {
             legList.add(new leg(wpList.get(wpList.size() - 2), wpList.get(wpList.size() - 1)));
         }
+        newWaypointAdded = true; // Mark that a new waypoint was added
     }
 }
 
 void updateRWSK() {
-    if (currentWaypointIndex < wpList.size()) {
+    if (newWaypointAdded && currentWaypointIndex < wpList.size()) {
         waypoint currentWaypoint = wpList.get(currentWaypointIndex);
         float distanceWaypoint = calculateDistance(lat, lon, currentWaypoint.getlat(), currentWaypoint.getlon());
-        
-        if (distanceWaypoint < THRESHOLD_DISTANCE) {
-            currentWaypointIndex++;
-            if (currentWaypointIndex >= wpList.size()) {
-                currentWaypointIndex = 0; // Loop back to the first waypoint if needed
+        distWP = distanceWaypoint;
+        if (currentWaypointIndex <= 1) {                                                                                   // wenn erster Waypoint
+            if (distanceWaypoint < THRESHOLD_DISTANCE) {
+                currentWaypointIndex++;
+            }
+        } else {                                                                                                           // anderen Waypoints
+            if (calculateDistanceAlongAB(
+                wpList.get(currentWaypointIndex - 1).getlat(), 
+                wpList.get(currentWaypointIndex - 1).getlon(), 
+                currentWaypoint.getlat(), 
+                currentWaypoint.getlon(), 
+                lat, 
+                lon) < THRESHOLD_DISTANCE) {
+                currentWaypointIndex++;
+             
+                if (currentWaypointIndex >= wpList.size()) {                                                                // Stopt RWSK berechnung
+                    //currentWaypointIndex = currentWaypointIndex; 
+                    newWaypointAdded = false;                                                                 
+                }
             }
         }
 
-        if (currentWaypointIndex < wpList.size()) {
+        if (currentWaypointIndex < wpList.size()) {                                                                          // neuer WP
             waypoint nextWaypoint = wpList.get(currentWaypointIndex);
             leg currentLeg = new leg(new waypoint(lat, lon), nextWaypoint);
             rwsk = currentLeg.getrwskPlane();
@@ -388,22 +385,23 @@ void updateRWSK() {
 }
 
 void sendHeading() {
-    try {
-        JSONObject headingData = new JSONObject();
-        headingData.setFloat("heading", rwsk);  // The current Heading
-        byte[] buffer = headingData.toString().getBytes(StandardCharsets.UTF_8);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName("127.0.0.1"), 6000);
-        headingSocket.send(packet);
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
+  text("RWSK: " + rwsk, 850, 20);
+  yaw = rwsk;
+  try {
+    byte[] buffer = Float.toString(rwsk).getBytes(StandardCharsets.UTF_8);
+    DatagramPacket packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName("127.0.0.1"), 6000);
+    sendSocket.send(packet);
+  } catch (IOException e) {
+    e.printStackTrace();
+  }
 }
 
 void receiveData() {
+    
     byte[] buffer = new byte[1024]; // Buffer for received data (larger to accommodate JSON data)
     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
     try {
-        socket.receive(packet); // Receive the UDP packet
+        receiveSocket.receive(packet); // Receive the UDP packet
         String json = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8);
         JSONObject data = JSONObject.parse(json); // Deserialize the JSON data into a JSONObject
         lat = data.getFloat("lat");
@@ -419,15 +417,16 @@ void receiveData() {
     } catch (IOException e) {
         e.printStackTrace();
     }
-         /*
+    /*
     lat = coordinate(48, i, 0.1);
-    i += 0.01;
-    delay(365);
-    lon = coordinate(11, 40, 0.1);
+    lon = coordinate(11, j, 0.1);
+    //i += 0.01;
+    //j += 0.001;
     */
+    //delay(100);
+    
+    println("WPlane: " + lat + " , " + lon);
 }
-
-
 
 void updateWaypointList(float lat, float lon) {
     waypoint currentWaypoint = new waypoint(map(lon, lon_x_lo, lon_x_ru, map_x_lo, map_x_ru), map(lat, lat_y_lo, lat_y_ru, map_y_lo, map_y_ru));
@@ -446,7 +445,6 @@ void updateWaypointList(float lat, float lon) {
     }
 }
 
-
 void geoToPixel(float lat, float lon, float rot) {
     float x = map(lon, 11.333333, 11.733333, 24, 710);
     float y = map(lat, 48.866667, 48.600000, 24, 710);
@@ -456,7 +454,6 @@ void geoToPixel(float lat, float lon, float rot) {
     if (points.size() > maxPoints) {
         points.remove(points.size() - 1);
     }
-
     move(x, y, rot);
 }
 
@@ -499,8 +496,6 @@ float calculateGroundSpeed(float lat1, float lon1, float lat2, float lon2, long 
     float speed = distance / timeElapsed;
     return speed;
 }
-
-
 
 //DEBUG
 void debugWaypoints() {
