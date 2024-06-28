@@ -238,7 +238,7 @@ void drawFlightInformation() {
                 currentWaypoint.getlat(), 
                 currentWaypoint.getlon(), 
                 lat, 
-                lon) < THRESHOLD_DISTANCE) {
+                lon) < 0) {
                 long currentTime = millis();
                 long timeTaken = (currentTime - actualTimes.get(actualTimes.size() - 1) * 1000) / 1000;
                 actualTimes.add(timeTaken);
@@ -366,7 +366,7 @@ void updateRWSK() {
                 currentWaypoint.getlat(), 
                 currentWaypoint.getlon(), 
                 lat, 
-                lon) < THRESHOLD_DISTANCE) {
+                lon) < 0) {
                 currentWaypointIndex++;
              
                 if (currentWaypointIndex >= wpList.size()) {                                                                // Stopt RWSK berechnung
